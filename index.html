@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Quiz - Linear & Exponential Functions</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #ff6b00;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated grid background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        /* Animated exponential curves */
+        .exp-curve {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes growExponential {
+            0% {
+                transform: translateX(-100%) scaleY(0.1);
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateX(100%) scaleY(1);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quiz-card {
+            background: rgba(20, 20, 20, 0.95);
+            border: 2px solid #ff6b00;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 0 40px rgba(255, 107, 0, 0.3);
+            animation: slideIn 0.5s ease;
+            width: 100%;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(255, 107, 0, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .login-form, .question-container {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            background: #1a1a1a;
+            border: 2px solid #ff6b00;
+            color: #ff6b00;
+            font-size: 1.1em;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(255, 107, 0, 0.5);
+            transform: scale(1.02);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #ff6b00, #ff8c00);
+            border: none;
+            color: #0a0a0a;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 107, 0, 0.5);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .question {
+            margin-bottom: 20px;
+        }
+
+        .question h2 {
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            color: #ff8c00;
+        }
+
+        .options {
+            display: grid;
+            gap: 15px;
+        }
+
+        .option {
+            padding: 15px;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option:hover {
+            border-color: #ff6b00;
+            transform: translateX(5px);
+        }
+
+        .option.selected {
+            background: rgba(255, 107, 0, 0.2);
+            border-color: #ff6b00;
+        }
+
+        .option input[type="radio"] {
+            display: none;
+        }
+
+        .progress {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 10px;
+            background: rgba(255, 107, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .formula {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            color: #ffa500;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .results {
+            text-align: center;
+            animation: zoomIn 0.5s ease;
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .score {
+            font-size: 3em;
+            margin: 20px 0;
+            color: #ff6b00;
+            text-shadow: 0 0 30px rgba(255, 107, 0, 0.5);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #mathCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="mathCanvas"></canvas>
+    
+    <svg class="grid-bg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#ff6b00" stroke-width="0.5" opacity="0.3"/>
+            </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+    </svg>
+
+    <div class="container">
+        <div class="quiz-card">
+            <h1> Math Quiz </h1>
+            
+            <div id="loginSection" class="login-form">
+                <input type="text" id="nameInput" placeholder="Your name is..." required>
+                <button onclick="startQuiz()">Start Quiz</button>
+            </div>
+
+            <div id="quizSection" class="hidden">
+                <div class="progress">
+                    <span>Question: <span id="currentQuestion">1</span>/5</span>
+                    <span>Name: <span id="userName"></span></span>
+                </div>
+                
+                <div id="questionContainer" class="question-container"></div>
+                
+                <button id="nextBtn" onclick="nextQuestion()" disabled>Next</button>
+            </div>
+
+            <div id="resultsSection" class="results hidden">
+                <h2>🎉 Results 🎉</h2>
+                <div class="score" id="finalScore"></div>
+                <p id="resultMessage"></p>
+                <button onclick="restartQuiz()">Try again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Quiz data
+        const questions = [
+            {
+    question: "Which function represents linear growth?",
+    formula: "Choose the correct formula:",
+    options: [
+        "y = 2ˣ",
+        "y = 3x + 5",
+        "y = x²",
+        "y = log(x)"
+    ],
+    correct: 1
+},
+{
+    question: "If a bacteria population doubles every hour, what type of growth does this represent?",
+    formula: "P(t) = P₀ · 2ᵗ",
+    options: [
+        "Linear growth",
+        "Exponential growth",
+        "Logarithmic growth",
+        "Quadratic growth"
+    ],
+    correct: 1
+},
+{
+    question: "Which equation describes linear decay?",
+    formula: "Find the function with a negative slope:",
+    options: [
+        "y = -2x + 10",
+        "y = 2x + 10",
+        "y = (1/2)ˣ",
+        "y = 2ˣ"
+    ],
+    correct: 0
+},
+{
+    question: "A radioactive element has a half-life of 5 years. This is an example of:",
+    formula: "N(t) = N₀ · (1/2)^(t/5)",
+    options: [
+        "Linear growth",
+        "Exponential growth",
+        "Exponential decay",
+        "Linear decay"
+    ],
+    correct: 2
+},
+{
+    question: "If a bank account grows by 5% annually, after 10 years the amount will be:",
+    formula: "A = P(1.05)¹⁰",
+    options: [
+        "1.5 times the initial amount",
+        "2 times the initial amount",
+        "Approximately 1.63 times the initial amount",
+        "10 times the initial amount"
+    ],
+    correct: 2
+}
+
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userName = '';
+        let answers = [];
+
+        // Canvas animation
+        const canvas = document.getElementById('mathCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Animated exponential curves
+        class ExponentialCurve {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = -100;
+                this.baseY = Math.random() * canvas.height;
+                this.speed = 1 + Math.random() * 2;
+                this.scale = 0.5 + Math.random() * 0.5;
+                this.opacity = 0;
+            }
+
+            update() {
+                this.x += this.speed;
+                if (this.x > canvas.width + 100) {
+                    this.reset();
+                }
+                
+                // Fade in and out
+                if (this.x < 100) {
+                    this.opacity = this.x / 100;
+                } else if (this.x > canvas.width - 100) {
+                    this.opacity = (canvas.width - this.x + 100) / 100;
+                } else {
+                    this.opacity = 1;
+                }
+            }
+
+            draw() {
+                ctx.strokeStyle = `rgba(255, 107, 0, ${this.opacity * 0.3})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                for (let i = 0; i < canvas.width; i += 5) {
+                    const x = i;
+                    const relX = (i - this.x + 200) / 100;
+                    const y = this.baseY - Math.exp(relX * this.scale) * 20;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                
+                ctx.stroke();
+            }
+        }
+
+        const curves = Array(3).fill(null).map(() => new ExponentialCurve());
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            curves.forEach(curve => {
+                curve.update();
+                curve.draw();
+            });
+            
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // Quiz functions
+        function startQuiz() {
+            const nameInput = document.getElementById('nameInput');
+            if (!nameInput.value.trim()) {
+                alert('Please, write your name!');
+                return;
+            }
+            
+            userName = nameInput.value.trim();
+            document.getElementById('userName').textContent = userName;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('quizSection').classList.remove('hidden');
+            
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const question = questions[currentQuestionIndex];
+            const container = document.getElementById('questionContainer');
+            
+            container.innerHTML = `
+                <div class="question">
+                    <h2>${question.question}</h2>
+                    <div class="formula">${question.formula}</div>
+                    <div class="options">
+                        ${question.options.map((option, index) => `
+                            <label class="option" onclick="selectOption(${index}, this)">
+                                <input type="radio" name="answer" value="${index}">
+                                ${option}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+            document.getElementById('nextBtn').disabled = true;
+        }
+
+        function selectOption(index, element) {
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Add selection to current
+            element.classList.add('selected');
+            
+            // Store answer
+            answers[currentQuestionIndex] = index;
+            
+            // Enable next button
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function nextQuestion() {
+            // Check if answer is correct
+            if (answers[currentQuestionIndex] === questions[currentQuestionIndex].correct) {
+                score++;
+            }
+            
+            currentQuestionIndex++;
+            
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizSection').classList.add('hidden');
+            document.getElementById('resultsSection').classList.remove('hidden');
+            
+            const percentage = (score / questions.length) * 100;
+            document.getElementById('finalScore').textContent = `${score}/5`;
+            
+            let message = '';
+            if (percentage === 100) {
+                message = '🌟 Отлично! Вы мастер математики!';
+            } else if (percentage >= 80) {
+                message = '🎯 Великолепно! Почти идеально!';
+            } else if (percentage >= 60) {
+                message = '👍 Хорошая работа! Продолжайте учиться!';
+            } else if (percentage >= 40) {
+                message = '📚 Неплохо, но есть куда расти!';
+            } else {
+                message = '💪 Не сдавайтесь! Практика - ключ к успеху!';
+            }
+            
+            document.getElementById('resultMessage').textContent = message;
+            
+            // Send results (in real app, this would send to server)
+            const result = {
+                name: userName,
+                score: score,
+                percentage: percentage,
+                timestamp: new Date().toISOString()
+            };
+            
+            console.log('📊 Результат отправлен:', result);
+            
+            // In real implementation, you would send this to your server:
+            // fetch('/api/results', {
+            //     method: 'POST',
+            //     headers: {'Content-Type': 'application/json'},
+            //     body: JSON.stringify(result)
+            // });
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            answers = [];
+            userName = '';
+            
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('nameInput').value = '';
+        }
+    </script>
+</body>
+</html>
